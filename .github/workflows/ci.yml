@@ -1,8 +1,13 @@
 name: CI
 
+# Branch pushes are limited to main so a pull request's commits don't run
+# every job twice (once for `push`, once for `pull_request`). Feature
+# branches are covered by the `pull_request` trigger; keeping `push` on main
+# means merges still get a run of their own, which is what the CI badge
+# reports.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 permissions:

@@ -232,10 +232,10 @@ script/test test/ask.bats
 script/test -f "permalink"
 ```
 
-`.github/workflows/ci.yml` runs those two scripts on every push and pull
-request, plus a `gh extension install .` smoke test that proves the repo
-installs and dispatches as a real `gh` extension. The scripts hold the tool
-flags and file lists, so CI and a local run can't drift apart.
+`.github/workflows/ci.yml` runs those two scripts on every pull request (and
+on pushes to `main`), plus a `gh extension install .` smoke test that proves
+the repo installs and dispatches as a real `gh` extension. The scripts hold
+the tool flags and file lists, so CI and a local run can't drift apart.
 
 Tooling:
 
