@@ -172,13 +172,16 @@ gh clarify check-enabled --verbose
   every session. Revisit MCP only if this grows to need cross-repo state
   (e.g. a shared index of open questions) that `gh` searches can't express.
 
-## GitHub Discussions CLI and GraphQL usage
+## Discussions are GraphQL-only
 
-The subcommands use the preview `gh discussion`/`gh repo view` commands for
-listing, viewing, and labeling discussions where possible, falling back to
-`gh api graphql` where the CLI doesn't expose the required response or
-mutation: `createDiscussion`, `addDiscussionComment`,
-`markDiscussionCommentAsAnswer`, and `addLabelsToLabelable`.
+There's no `gh discussion list`/`view`/`comment` — the CLI's discussion
+support doesn't go beyond `gh repo view` (for repo-level fields like
+`hasDiscussionsEnabled`) and `gh label create`. Every discussion-specific
+operation (creating a discussion, listing/searching, posting a comment,
+marking one as the accepted answer, adding labels to a discussion) goes
+through `gh api graphql`, calling `createDiscussion`, `search(type:
+DISCUSSION)`, `addDiscussionComment`, `markDiscussionCommentAsAnswer`, and
+`addLabelsToLabelable` directly.
 
 Two `gh api graphql` gotchas worth remembering when editing these calls:
 

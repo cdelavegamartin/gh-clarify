@@ -25,17 +25,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 repo=()
 require=false
 verbose=false
+remaining_args=()
+repo_value=""
+
+parse_repo_flag "${script_name}" "$@"
+set -- "${remaining_args[@]}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)
             sed -n '/^# Usage:/,/^set -euo pipefail/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
             exit 0
-            ;;
-        --repo)
-            [[ $# -ge 2 ]] || die "${script_name}" "--repo requires a value"
-            repo=("$2")
-            shift 2
             ;;
         --require)
             require=true
@@ -50,6 +50,8 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+[[ -n "${repo_value}" ]] && repo=("${repo_value}")
 
 if [[ "${verbose}" == "true" ]]; then
     echo "${script_name}: repo arg: ${repo[*]:-<none, gh will resolve from cwd>}" >&2
