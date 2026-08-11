@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# gh-clarify: gh CLI extension for the code-clarification Q&A discussions
+# workflow. Once installed with `gh extension install cdelavegamartin/gh-clarify`,
+# this becomes `gh clarify <subcommand> [args...]`.
+#
+# Usage: gh clarify <subcommand> [args...]
+#        gh clarify --help | -h
+#        gh clarify --version
+#
+# Run `gh clarify <subcommand> --help` for a subcommand's own usage.
+set -euo pipefail
+
+script_name="gh-clarify"
+# Resolve the extension's own install directory, not the caller's cwd --
+# gh extensions run from wherever they were installed, which is rarely the
+# directory the user invoked `gh` from.
+ext_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Subcommand -> one-line description, in display order.
+subcommands="ask:File a code-clarification Q&A discussion for a snippet
+list-new:List unanswered code-clarification discussions as JSON
+list-followups:List bot-answered discussions that may need a follow-up
+post-answer:Post an answer/follow-up comment on a discussion
+mark-answered:Mark a comment as the discussion's accepted answer
+label-answered:Add the bot-answered label to a discussion
+show-thread:Show a discussion's full comment thread as JSON
+setup-labels:Idempotently create the code-clarification/bot-answered labels
+check-enabled:Check whether GitHub Discussions is enabled for a repo
+prompt:Print the scheduled-review prompt body (for CI/save_workflow)"
+
+print_usage() {
+    sed -n '/^# Usage:/,/^set -euo pipefail/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'
+    echo
+    echo "Subcommands:"
+    while IFS=: read -r name description; do
+        printf '  %-16s %s\n' "${name}" "${description}"
+    done <<<"${subcommands}"
+}
+
+print_version() {
+    if [[ -f "${ext_dir}/VERSION" ]]; then
+        echo "${script_name} $(cat "${ext_dir}/VERSION")"
+    else
+        echo "${script_name} (version unknown: VERSION file missing)"
+    fi
+}
+
+if [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]]; then
+    print_usage
+    exit 0
+fi
+
+if [[ "$1" == "--version" ]]; then
+    print_version
+    exit 0
+fi
+
+subcommand="$1"
+shift
+
+known_subcommand=false
+while IFS=: read -r name _; do
+    if [[ "${name}" == "${subcommand}" ]]; then
+        known_subcommand=true
+        break
+    fi
+done <<<"${subcommands}"
+
+if [[ "${known_subcommand}" != "true" ]]; then
+    echo "${script_name}: unknown subcommand: ${subcommand}" >&2
+    echo >&2
+    print_usage >&2
+    exit 1
+fi
+
+exec "${ext_dir}/cmds/${subcommand}.sh" "$@"
