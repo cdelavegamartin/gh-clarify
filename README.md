@@ -216,9 +216,56 @@ templates/*.md                    question/answer/follow-up templates
 workflow-prompt.md                source of truth for `gh clarify prompt`
 .github-workflow-template/        template to copy into a target repo's .github/workflows/
 skill/ask-clarification/          Agent Skill for /ask-clarification
+script/lint, script/test          local lint/test runners (CI runs these same scripts)
+test/                             bats suite, fake `gh` stub and helpers
 ```
 
 ## Development
 
-Shellcheck/shfmt/bats tooling and a `CONTRIBUTING.md` guide are being added
-in a follow-up PR (see the project's PR history for progress).
+### Running the checks
+
+```bash
+script/lint          # shellcheck -S warning, then shfmt -d -i 4 -ci -bn
+script/lint --fix    # rewrite files with shfmt instead of just reporting
+script/test          # the whole bats suite
+script/test test/ask.bats
+script/test -f "permalink"
+```
+
+`.github/workflows/ci.yml` runs those two scripts on every push and pull
+request, plus a `gh extension install .` smoke test that proves the repo
+installs and dispatches as a real `gh` extension. The scripts hold the tool
+flags and file lists, so CI and a local run can't drift apart.
+
+Tooling:
+
+- **shellcheck** at `-S warning` with `-x` (it follows the `source` into
+  `lib/lib.sh`). Preinstalled on GitHub's `ubuntu-latest` runners.
+- **shfmt** with `-i 4 -ci -bn`, the flags that match the existing style.
+  Install with `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or grab a
+  [release binary](https://github.com/mvdan/sh/releases).
+- **[bats-core](https://github.com/bats-core/bats-core)**. Install without
+  root via `git clone --depth 1 https://github.com/bats-core/bats-core.git
+  /tmp/bats-core && /tmp/bats-core/install.sh "${HOME}/.local"`, or with
+  `npm install -g bats` (what CI uses).
+
+### How the tests work
+
+The suite is **fully offline and deterministic** — it never calls the
+network, never needs a token, and never touches real GitHub state:
+
+- `test/stubs/gh` is a fake `gh` put first on `PATH`. It dispatches on
+  distinctive substrings (the GraphQL operation name, the `gh` subcommand)
+  rather than whole-query equality, so reformatting a query doesn't break
+  the tests, and it records every invocation for the assertion helpers to
+  match against. Scenarios are selected with environment variables —
+  `GH_STUB_RESPONSE_<key>` for canned JSON, `GH_STUB_EXIT_<key>` to simulate
+  a failed call, `GH_STUB_REPO_JSON`, `GH_STUB_LABEL_CREATE` — documented at
+  the top of the stub.
+- `ask.sh` also shells out to `git`, so its tests build a real throwaway
+  repo in the test's tmpdir instead of stubbing `git`. That keeps them
+  deterministic while still exercising the actual repo-root resolution and
+  `git show HEAD:<path>` behavior.
+- `test/helpers/test_helper.bash` carries its own small assertions, so the
+  suite needs nothing beyond bats-core itself.
+
