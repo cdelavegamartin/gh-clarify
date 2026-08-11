@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: shellcheck + shfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # shellcheck is preinstalled on ubuntu-latest; shfmt is not.
+      - name: Install shfmt
+        env:
+          SHFMT_VERSION: v3.12.0
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/shfmt" \
+            "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64"
+          chmod +x "${RUNNER_TEMP}/shfmt"
+          echo "${RUNNER_TEMP}" >>"${GITHUB_PATH}"
+
+      - name: Lint
+        run: script/lint
+
+  test:
+    name: bats
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Installed from source into a user-writable prefix: `npm install -g`
+      # needs root on the runner, and this matches the rootless install the
+      # README documents for local use.
+      - name: Install bats
+        env:
+          BATS_VERSION: v1.14.0
+        run: |
+          git clone --depth 1 --branch "${BATS_VERSION}" \
+            https://github.com/bats-core/bats-core.git "${RUNNER_TEMP}/bats-core"
+          "${RUNNER_TEMP}/bats-core/install.sh" "${HOME}/.local"
+          echo "${HOME}/.local/bin" >>"${GITHUB_PATH}"
+
+      # The suite is fully offline: a fake `gh` on PATH answers every API
+      # call, and the git-backed tests build a throwaway repo in a tmpdir.
+      # Nothing here touches real GitHub state.
+      - name: Run tests
+        run: script/test
+
+  extension:
+    name: gh extension install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Proves the repo really installs and dispatches as a gh extension.
+      # A local `gh extension install .` only symlinks the checkout, so this
+      # needs no token and makes no API calls (verified locally with the
+      # environment's token unset).
+      - name: Install this checkout as a gh extension
+        run: gh extension install .
+
+      - name: Dispatch through gh
+        run: |
+          gh clarify --version
+          gh clarify --help

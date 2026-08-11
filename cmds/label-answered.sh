@@ -17,7 +17,7 @@ set -- "${remaining_args[@]}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             sed -n '/^# Usage:/,/^set -euo pipefail/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
             exit 0
             ;;
@@ -35,7 +35,7 @@ done
 
 # Self-heal: ensure the "bot-answered" label exists before applying it,
 # since addLabelsToLabelable fails outright on a missing label id.
-read -r owner name <<< "$(resolve_owner_name "${script_name}" "${repo_value}")"
+read -r owner name <<<"$(resolve_owner_name "${script_name}" "${repo_value}")"
 name_with_owner="${owner}/${name}"
 ensure_label "${name_with_owner}" "bot-answered" "Answered by a Copilot agent" "5319E7" || true
 

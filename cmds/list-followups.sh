@@ -26,7 +26,7 @@ set -- "${remaining_args[@]}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             sed -n '/^# Usage:/,/^set -euo pipefail/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
             exit 0
             ;;
@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-read -r owner name <<< "$(resolve_owner_name "${script_name}" "${repo_value}")"
+read -r owner name <<<"$(resolve_owner_name "${script_name}" "${repo_value}")"
 
 # $searchQuery is a GraphQL variable, not a shell one; must not expand.
 # shellcheck disable=SC2016
