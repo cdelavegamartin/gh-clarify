@@ -39,7 +39,7 @@ context=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             sed -n '/^# Usage:/,/^set -euo pipefail/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
             exit 0
             ;;
@@ -90,7 +90,7 @@ end_line="${end_line:-${start_line}}"
 # "${start_line},${end_line}p" call below against non-numeric/injected input.
 [[ "${start_line}" =~ ^[1-9][0-9]*$ ]] || die "${script_name}" "--start-line must be a positive integer, got: ${start_line}"
 [[ "${end_line}" =~ ^[1-9][0-9]*$ ]] || die "${script_name}" "--end-line must be a positive integer, got: ${end_line}"
-(( end_line >= start_line )) || die "${script_name}" "--end-line (${end_line}) must be >= --start-line (${start_line})"
+((end_line >= start_line)) || die "${script_name}" "--end-line (${end_line}) must be >= --start-line (${start_line})"
 
 # Discussions-disabled guard. check-enabled.sh has no --repo-path flag (it
 # always uses the gh context of cwd), so run it from repo_path instead.
@@ -149,7 +149,8 @@ if [[ "${language}" == "${rel_path}" ]]; then
     language=""
 fi
 
-body=$(cat <<BODY
+body=$(
+    cat <<BODY
 ## Question
 
 ${title}
@@ -234,7 +235,7 @@ if [[ -z "${label_id}" ]]; then
     echo "warning: ${script_name}: ${label_note}" >&2
 else
     # $labelableId/$labelIds are GraphQL variables, not shell ones; must not expand.
-# shellcheck disable=SC2016
+    # shellcheck disable=SC2016
     label_response=$(gh api graphql -f query='
         mutation($labelableId:ID!,$labelIds:[ID!]!){
             addLabelsToLabelable(input:{labelableId:$labelableId,labelIds:$labelIds}){ clientMutationId }
