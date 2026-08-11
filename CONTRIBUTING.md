@@ -7,7 +7,7 @@ the artifact users install.
 ## Repository layout
 
 ```
-gh-clarify                       root dispatcher (gh clarify <subcommand>)
+gh-clarify                        root dispatcher (gh clarify <subcommand>)
 lib/lib.sh                        shared helpers (die, flag parsing, GraphQL plumbing)
 cmds/*.sh                         one script per subcommand
 templates/*.md                    question/answer/follow-up templates

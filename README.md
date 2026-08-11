@@ -1,10 +1,19 @@
 # gh-clarify
 
+[![CI](https://github.com/cdelavegamartin/gh-clarify/actions/workflows/ci.yml/badge.svg)](https://github.com/cdelavegamartin/gh-clarify/actions/workflows/ci.yml)
+
 A [`gh` CLI extension](https://cli.github.com/manual/gh_extension) that
 implements a lightweight "I don't understand why this snippet works / is
 necessary" Q&A workflow using **GitHub Discussions** — so the answer is
 visible to the whole team, doesn't pollute commit history, and can be
 answered asynchronously by an agent.
+
+It exists for the moment where you (or a coding agent) hit code that isn't
+obviously correct or necessary. The alternatives are bad: guess and move on,
+leave a `TODO` nobody reads, or interrupt someone. Instead, `gh clarify ask`
+files the question — file, line range, commit permalink, verbatim snippet —
+as a Q&A discussion, and a scheduled agent answers it off-peak. The result
+is a durable, searchable explanation attached to the code it's about.
 
 ## How it works
 
@@ -209,7 +218,7 @@ Two `gh api graphql` gotchas worth remembering when editing these calls:
 ## Repository layout
 
 ```
-gh-clarify                       root dispatcher (gh clarify <subcommand>)
+gh-clarify                        root dispatcher (gh clarify <subcommand>)
 lib/lib.sh                        shared helpers
 cmds/*.sh                         one script per subcommand
 templates/*.md                    question/answer/follow-up templates
@@ -218,11 +227,10 @@ workflow-prompt.md                source of truth for `gh clarify prompt`
 skill/ask-clarification/          Agent Skill for /ask-clarification
 script/lint, script/test          local lint/test runners (CI runs these same scripts)
 test/                             bats suite, fake `gh` stub and helpers
+VERSION                           version reported by `gh clarify --version`
 ```
 
 ## Development
-
-### Running the checks
 
 ```bash
 script/lint          # shellcheck -S warning, then shfmt -d -i 4 -ci -bn
@@ -237,35 +245,13 @@ on pushes to `main`), plus a `gh extension install .` smoke test that proves
 the repo installs and dispatches as a real `gh` extension. The scripts hold
 the tool flags and file lists, so CI and a local run can't drift apart.
 
-Tooling:
-
-- **shellcheck** at `-S warning` with `-x` (it follows the `source` into
-  `lib/lib.sh`). Preinstalled on GitHub's `ubuntu-latest` runners.
-- **shfmt** with `-i 4 -ci -bn`, the flags that match the existing style.
-  Install with `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or grab a
-  [release binary](https://github.com/mvdan/sh/releases).
-- **[bats-core](https://github.com/bats-core/bats-core)**. Install without
-  root via `git clone --depth 1 https://github.com/bats-core/bats-core.git
-  /tmp/bats-core && /tmp/bats-core/install.sh "${HOME}/.local"` (what CI
-  does, pinned to a tag), or with `npm install -g bats` if you'd rather.
-
-### How the tests work
-
 The suite is **fully offline and deterministic** — it never calls the
-network, never needs a token, and never touches real GitHub state:
+network, never needs a token, and never touches real GitHub state: a fake
+`gh` (`test/stubs/gh`) goes first on `PATH`, and the tests that need real
+git behavior build a throwaway repo in a tmpdir.
 
-- `test/stubs/gh` is a fake `gh` put first on `PATH`. It dispatches on
-  distinctive substrings (the GraphQL operation name, the `gh` subcommand)
-  rather than whole-query equality, so reformatting a query doesn't break
-  the tests, and it records every invocation for the assertion helpers to
-  match against. Scenarios are selected with environment variables —
-  `GH_STUB_RESPONSE_<key>` for canned JSON, `GH_STUB_EXIT_<key>` to simulate
-  a failed call, `GH_STUB_REPO_JSON`, `GH_STUB_LABEL_CREATE` — documented at
-  the top of the stub.
-- `ask.sh` also shells out to `git`, so its tests build a real throwaway
-  repo in the test's tmpdir instead of stubbing `git`. That keeps them
-  deterministic while still exercising the actual repo-root resolution and
-  `git show HEAD:<path>` behavior.
-- `test/helpers/test_helper.bash` carries its own small assertions, so the
-  suite needs nothing beyond bats-core itself.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for tool versions and install
+instructions, how to add a new subcommand, how the `gh` stub works, and the
+commit/release conventions. Release history is in
+[CHANGELOG.md](CHANGELOG.md).
 
