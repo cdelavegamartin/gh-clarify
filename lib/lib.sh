@@ -28,6 +28,76 @@ check_graphql_errors() {
     fi
 }
 
+# parse_repo_flag <script-name> <args...>
+# Consumes a "--repo <value>" flag from a subcommand's argument list,
+# assigning it to the caller's `repo_value` variable. Every other argument
+# (positional args, -h/--help, or flags a subcommand defines itself, e.g.
+# --require/--verbose) is appended, in order, to the caller's
+# `remaining_args` array, for the caller to parse itself afterwards.
+#
+# Callers must declare `repo_value` and `remaining_args` (as plain,
+# non-local variables) before calling, since cmds/*.sh scripts source
+# lib.sh into their own top-level scope and this function relies on
+# ordinary (non-`local`) assignment to make its results visible to the
+# caller once it returns:
+#
+#   repo_value=""
+#   remaining_args=()
+#   parse_repo_flag "${script_name}" "$@"
+#   set -- "${remaining_args[@]}"
+#   while [[ $# -gt 0 ]]; do
+#       case "$1" in
+#           ... subcommand-specific flags/positionals ...
+#       esac
+#   done
+parse_repo_flag() {
+    local script_name="$1"
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --repo)
+                [[ $# -ge 2 ]] || die "${script_name}" "--repo requires a value"
+                repo_value="$2"
+                shift 2
+                ;;
+            *)
+                remaining_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+}
+
+# parse_repo_and_limit_flags <script-name> <args...>
+# Same as parse_repo_flag, but also consumes a "--limit <value>" flag into
+# the caller's `limit` variable (declare it with its default, e.g.
+# `limit=5`, before calling).
+parse_repo_and_limit_flags() {
+    local script_name="$1"
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --repo)
+                [[ $# -ge 2 ]] || die "${script_name}" "--repo requires a value"
+                repo_value="$2"
+                shift 2
+                ;;
+            --limit)
+                [[ $# -ge 2 ]] || die "${script_name}" "--limit requires a value"
+                # limit is intentionally a caller-scope global (see the
+                # function doc comment above), not unused.
+                # shellcheck disable=SC2034
+                limit="$2"
+                shift 2
+                ;;
+            *)
+                remaining_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+}
+
 # resolve_owner_name <script-name> <repo_value-or-empty>
 # Prints "<owner> <name>" (space-separated) for repo_value (an "owner/repo"
 # string), or the current directory's repo if repo_value is empty. Dies via

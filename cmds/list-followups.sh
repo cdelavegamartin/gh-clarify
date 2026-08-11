@@ -19,22 +19,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 limit=5
 repo_value=""
+remaining_args=()
+
+parse_repo_and_limit_flags "${script_name}" "$@"
+set -- "${remaining_args[@]}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)
             sed -n '/^# Usage:/,/^set -euo pipefail/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
             exit 0
-            ;;
-        --limit)
-            [[ $# -ge 2 ]] || die "${script_name}" "--limit requires a value"
-            limit="$2"
-            shift 2
-            ;;
-        --repo)
-            [[ $# -ge 2 ]] || die "${script_name}" "--repo requires a value"
-            repo_value="$2"
-            shift 2
             ;;
         *)
             die "${script_name}" "unknown argument: $1"
