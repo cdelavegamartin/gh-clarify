@@ -49,36 +49,23 @@ Use this skill when:
 
 ### Strip the trailing `?` if present
 
-The question may end with `?` — strip it when extracting the question text (the script and GraphQL mutation don't need it).
+The question may end with `?` — strip it when extracting the question text (the `gh clarify ask` command and GraphQL mutation don't need it).
 
 ## How it works
 
 1. **Parse** the question and optional location from the command arguments.
 2. **Infer missing location** from conversation context if not provided inline (file recently discussed/attached, etc.).
-3. **Call the script** at `copilot/clarifications/scripts/create-clarification-discussion.sh` (see [Script location](#script-location) below).
-4. **Report the result** back to the user:
+3. **Prerequisite**: the `gh-clarify` extension must be installed (`gh extension install cdelavegamartin/gh-clarify`) so `gh clarify` is available on `PATH`. If `gh clarify --help` fails, stop and tell the user to install it first.
+4. **Call the command**: `gh clarify ask --file-path <path> --start-line <n> [--end-line <n>] --title <title> --context <text>` (see [Arguments](#arguments) below).
+5. **Report the result** back to the user:
    - If successful: show the discussion URL
-   - If Discussions is disabled: relay the message exactly as the script prints it (tell the user to enable Discussions or note it in the repo's `.github/copilot-instructions.md`)
+   - If Discussions is disabled: relay the message exactly as the command prints it (tell the user to enable Discussions or note it in the repo's `.github/copilot-instructions.md`)
    - If the Q&A category is missing: relay the message exactly (tell the user to create one)
-   - If the script fails for another reason: show the error message
+   - If the command fails for another reason: show the error message
 
-### Script location
+## Arguments
 
-The shared workflow assets must be vendored into the target repo as documented
-in `copilot/clarifications/README.md`. Resolve the script from that repo's root,
-not from the installed Skill directory:
-
-```bash
-repo_root="$(git rev-parse --show-toplevel)"
-script_path="${repo_root}/copilot/clarifications/scripts/create-clarification-discussion.sh"
-```
-
-If that file is missing, stop and tell the user to complete the target-repo
-setup in `copilot/clarifications/README.md`; do not reimplement the script.
-
-## Arguments for the script
-
-Pass the following flags to `create-clarification-discussion.sh`:
+Pass the following flags to `gh clarify ask`:
 
 - `--file-path <path>` — path to the file, relative to the repo root (or absolute, as long as it resolves inside the repo)
 - `--start-line <n>` — first line of the snippet (1-based)
@@ -87,16 +74,16 @@ Pass the following flags to `create-clarification-discussion.sh`:
 - `--context <text>` — why you were looking at this and what's unclear (include relevant background from the conversation)
 - `--repo-path <path>` — optional; path to the repo (defaults to the current working directory)
 
-### Boundary checks and guards (already in the script)
+### Boundary checks and guards (already in `gh clarify ask`)
 
-The script already implements:
+The command already implements:
 - **Repo boundary check**: `--file-path` must resolve to a file inside the repo root (rejects `..` escapes)
 - **Discussions-disabled guard**: checks `gh repo view --json hasDiscussionsEnabled` first and exits with a message if `false`
 - **Q&A category check**: ensures a Q&A discussion category exists before trying to create the discussion
 - **Permalink generation**: builds a stable `https://github.com/<owner>/<repo>/blob/<sha>/<path>#L<start>-L<end>` URL
 - **Label best-effort application**: tries to apply the `code-clarification` label if it exists; warns if it doesn't, but doesn't fail the whole operation
 
-You do **not** need to reimplement any of this logic — just call the script and relay its output.
+You do **not** need to reimplement any of this logic — just call the command and relay its output.
 
 ## Behavior guarantees
 
@@ -108,8 +95,8 @@ You do **not** need to reimplement any of this logic — just call the script an
 - **Permalink stability**: uses the current commit SHA, not a branch name
 - **Code snippet**: reads the file content at HEAD and includes the exact lines
 - **Label best-effort**: applies `code-clarification` label if it exists, warns if not, but doesn't fail
-- **Session cwd awareness**: resolves the target repo from the calling session's working directory, not from the installed Skill directory
+- **Session cwd awareness**: resolves the target repo from the calling session's working directory via `--repo-path` (defaults to cwd), not from the installed Skill directory
 
-The shared script handles the repository and GitHub operations, so this Skill's
-job is to parse the command, infer missing context, and invoke the script with
-the right flags.
+`gh clarify ask` handles the repository and GitHub operations, so this Skill's
+job is to parse the command, infer missing context, and invoke the extension
+with the right flags.

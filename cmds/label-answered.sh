@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Adds the bot-answered label to a discussion.
 #
-# Usage: label-answered.sh <discussion-number> [--repo owner/repo] [-h|--help]
+# Usage: gh clarify label-answered <discussion-number> [--repo owner/repo] [-h|--help]
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 repo_value=""
 number=""

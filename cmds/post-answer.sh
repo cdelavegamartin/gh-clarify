@@ -3,13 +3,13 @@
 # GraphQL (not `gh discussion comment`, so the new comment's id is returned
 # in the same call). Prints the resulting comment id to stdout on success.
 #
-# Usage: post-answer.sh <discussion-number> <body-file> [--repo owner/repo] [-h|--help]
+# Usage: gh clarify post-answer <discussion-number> <body-file> [--repo owner/repo] [-h|--help]
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 repo_value=""
 number=""

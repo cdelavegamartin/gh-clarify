@@ -3,7 +3,7 @@
 # agent can judge whether the last comment is a human asking for more
 # detail. Performs no judgment itself.
 #
-# Usage: show-discussion-thread.sh <discussion-number> [--limit N] [--repo owner/repo] [-h|--help]
+# Usage: gh clarify show-thread <discussion-number> [--limit N] [--repo owner/repo] [-h|--help]
 #   --limit N          Maximum number of comments/replies to fetch (default: 30).
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #
@@ -14,8 +14,8 @@
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 limit=30
 repo_value=""

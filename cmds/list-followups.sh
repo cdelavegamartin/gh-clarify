@@ -4,7 +4,7 @@
 # the last comment is actually a human asking for more detail; that
 # judgment call is left to the calling prompt/agent.
 #
-# Usage: list-followups.sh [--limit N] [--repo owner/repo] [-h|--help]
+# Usage: gh clarify list-followups [--limit N] [--repo owner/repo] [-h|--help]
 #   --limit N          Maximum number of discussions to fetch (default: 5).
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #
@@ -14,8 +14,8 @@
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 limit=5
 repo_value=""

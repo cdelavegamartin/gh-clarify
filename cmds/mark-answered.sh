@@ -2,12 +2,12 @@
 # Marks a comment as the accepted answer on a discussion (only valid on
 # Q&A category discussions) via GraphQL.
 #
-# Usage: mark-answered.sh <comment-id> [-h|--help]
+# Usage: gh clarify mark-answered <comment-id> [-h|--help]
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     sed -n '/^# Usage:/,/^set -euo pipefail/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
