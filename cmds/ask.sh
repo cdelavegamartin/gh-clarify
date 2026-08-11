@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Creates a "code-clarification" GitHub Discussion (Q&A category) pre-filled
 # with a stable commit permalink and the exact code snippet, using the
-# structure in ../question-template.md. Invoked by the ask-clarification
-# Agent Skill (../../skills/ask-clarification/SKILL.md).
+# structure in ../templates/question-template.md. Invoked by the
+# ask-clarification Agent Skill (../skill/ask-clarification/SKILL.md).
 #
 # Usage:
-#   create-clarification-discussion.sh --file-path <path> --start-line <n> \
+#   gh clarify ask --file-path <path> --start-line <n> \
 #     [--end-line <n>] --title <title> --context <text> \
 #     [--repo-path <path>] [-h|--help]
 #
@@ -23,9 +23,9 @@
 set -euo pipefail
 
 script_name="$(basename "$0")"
-scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib.sh
-source "${scripts_dir}/lib.sh"
+cmd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/lib.sh
+source "${cmd_dir}/../lib/lib.sh"
 
 CLARIFICATION_LABEL="code-clarification"
 QA_CATEGORY_SLUG="q-a"
@@ -92,10 +92,9 @@ end_line="${end_line:-${start_line}}"
 [[ "${end_line}" =~ ^[1-9][0-9]*$ ]] || die "${script_name}" "--end-line must be a positive integer, got: ${end_line}"
 (( end_line >= start_line )) || die "${script_name}" "--end-line (${end_line}) must be >= --start-line (${start_line})"
 
-# Discussions-disabled guard. check-discussions-enabled.sh has no
-# --repo-path flag (it always uses the gh context of cwd), so run it from
-# repo_path instead.
-has_discussions=$(cd "${repo_path}" && "${scripts_dir}/check-discussions-enabled.sh") \
+# Discussions-disabled guard. check-enabled.sh has no --repo-path flag (it
+# always uses the gh context of cwd), so run it from repo_path instead.
+has_discussions=$(cd "${repo_path}" && "${cmd_dir}/check-enabled.sh") \
     || die "${script_name}" "could not check whether Discussions is enabled"
 if [[ "${has_discussions}" != "true" ]]; then
     echo "GitHub Discussions is disabled for this repository, so no discussion was created. Ask a maintainer to enable it under Settings → General → Features → Discussions, or if it's staying disabled, note that in this repo's own .github/copilot-instructions.md (see ../README.md#handling-disabled-discussions)."

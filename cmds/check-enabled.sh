@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Checks whether GitHub Discussions is enabled for a repository.
 #
-# Usage: check-discussions-enabled.sh [--repo owner/repo] [--require] [--verbose] [-h|--help]
+# Usage: gh clarify check-enabled [--repo owner/repo] [--require] [--verbose] [-h|--help]
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #   --require            Exit non-zero with a stderr message if Discussions
 #                         is disabled, instead of just printing true/false.
@@ -19,8 +19,8 @@
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 repo=()
 require=false

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lists unanswered code-clarification GitHub Discussions as JSON.
 #
-# Usage: list-new.sh [--limit N] [--repo owner/repo] [-h|--help]
+# Usage: gh clarify list-new [--limit N] [--repo owner/repo] [-h|--help]
 #   --limit N          Maximum number of discussions to fetch (default: 5).
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #
@@ -14,8 +14,8 @@
 set -euo pipefail
 
 script_name="$(basename "$0")"
-# shellcheck source=lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=../lib/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/lib.sh"
 
 repo_value=""
 limit=5

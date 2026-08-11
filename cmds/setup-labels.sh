@@ -3,13 +3,13 @@
 # workflow ("code-clarification", "bot-answered") in a repo. Safe to run
 # repeatedly; existing labels are left untouched.
 #
-# Usage: setup-labels.sh [--repo owner/repo] [-h|--help]
+# Usage: gh clarify setup-labels [--repo owner/repo] [-h|--help]
 set -euo pipefail
 
 script_name="$(basename "$0")"
-scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib.sh
-source "${scripts_dir}/lib.sh"
+cmd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/lib.sh
+source "${cmd_dir}/../lib/lib.sh"
 
 repo_value=""
 
