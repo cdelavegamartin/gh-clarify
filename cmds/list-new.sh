@@ -5,12 +5,11 @@
 #   --limit N          Maximum number of discussions to fetch (default: 5).
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #
-# There is no `gh discussion list` (see ../README.md#discussions-are-graphql-only),
-# so this goes through `gh api graphql`'s `search(type: DISCUSSION)`, which
-# supports combining `label:` and `is:unanswered`/`is:answered` qualifiers
-# directly in the search query string (confirmed via manual testing against
-# a repo with many discussions) -- unlike the category/label combination
-# some earlier (nonexistent) `gh discussion list` usage assumed.
+# This goes through `gh api graphql`'s `search(type: DISCUSSION)` rather than
+# the preview `gh discussion list` (see ../README.md#discussions-go-through-graphql),
+# because search supports combining `label:` and `is:unanswered`/`is:answered`
+# qualifiers directly in the query string (confirmed via manual testing
+# against a repo with many discussions).
 set -euo pipefail
 
 script_name="$(basename "$0")"

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Posts an answer as a comment on a code-clarification discussion via
-# GraphQL (not `gh discussion comment`, so the new comment's id is returned
-# in the same call). Prints the resulting comment id to stdout on success.
+# GraphQL rather than the preview `gh discussion comment`, so the new
+# comment's id is returned in the same call. Prints that comment id to
+# stdout on success.
 #
 # Usage: gh clarify post-answer <discussion-number> <body-file> [--repo owner/repo] [-h|--help]
 #   --repo owner/repo   Target repo (default: current repo, via gh).
