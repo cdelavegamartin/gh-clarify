@@ -11,8 +11,8 @@
 #                         to stderr. Useful when troubleshooting `gh` auth
 #                         or repo-resolution issues.
 #
-# Note: unlike `gh discussion list/view/edit` (used by the other scripts in
-# this directory), `gh repo view` takes the repo as a *positional* argument,
+# Note: unlike the `gh api graphql` calls the other scripts in this
+# directory use, `gh repo view` takes the repo as a *positional* argument,
 # not a `--repo` flag. This script accepts `--repo owner/repo` for a
 # consistent CLI across the workflow, then passes it positionally to
 # `gh repo view`.

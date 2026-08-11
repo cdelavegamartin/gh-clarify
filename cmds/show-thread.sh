@@ -7,10 +7,10 @@
 #   --limit N          Maximum number of comments/replies to fetch (default: 30).
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #
-# There is no `gh discussion view` (see ../README.md#discussions-are-graphql-only),
-# so this goes through `gh api graphql`. GitHub's Discussion.comments
-# connection returns comments oldest-first by default (no orderBy arg
-# exists on it), matching the previously-assumed `--order oldest` behavior.
+# This goes through `gh api graphql` rather than the preview
+# `gh discussion view` (see ../README.md#discussions-go-through-graphql).
+# GitHub's Discussion.comments connection returns comments oldest-first by
+# default (no orderBy arg exists on it), which is the order this prints.
 set -euo pipefail
 
 script_name="$(basename "$0")"

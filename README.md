@@ -181,16 +181,31 @@ gh clarify check-enabled --verbose
   every session. Revisit MCP only if this grows to need cross-repo state
   (e.g. a shared index of open questions) that `gh` searches can't express.
 
-## Discussions are GraphQL-only
+## Discussions go through GraphQL
 
-There's no `gh discussion list`/`view`/`comment` — the CLI's discussion
-support doesn't go beyond `gh repo view` (for repo-level fields like
-`hasDiscussionsEnabled`) and `gh label create`. Every discussion-specific
-operation (creating a discussion, listing/searching, posting a comment,
-marking one as the accepted answer, adding labels to a discussion) goes
-through `gh api graphql`, calling `createDiscussion`, `search(type:
-DISCUSSION)`, `addDiscussionComment`, `markDiscussionCommentAsAnswer`, and
-`addLabelsToLabelable` directly.
+Every discussion-specific operation goes through `gh api graphql` —
+`createDiscussion`, `search(type: DISCUSSION)`, `addDiscussionComment`,
+`markDiscussionCommentAsAnswer`, and `addLabelsToLabelable` — rather than
+the `gh discussion` commands. `gh repo view` (for repo-level fields like
+`hasDiscussionsEnabled`) and `gh label create` are the only non-GraphQL
+`gh` calls.
+
+`gh` *does* ship a `gh discussion` command group (`create`, `list`, `view`,
+`comment`), but it is explicitly **in preview and "subject to change without
+notice"**, and it still doesn't cover three things this workflow needs:
+
+- marking a comment as a discussion's accepted answer
+  (`markDiscussionCommentAsAnswer`);
+- adding a label to an *existing* discussion (`gh discussion create --label`
+  can label at creation time, but nothing labels a discussion afterwards,
+  which is what `label-answered` does);
+- getting the created comment's node id back from `gh discussion comment`,
+  which `post-answer` must return so `mark-answered` can act on it.
+
+Since some calls have to be GraphQL regardless, all of them are, which keeps
+one consistent error-handling path and avoids depending on a preview surface
+that can change underneath us. Revisiting this once `gh discussion` is
+stable and covers those gaps is tracked as a possible future simplification.
 
 Two `gh api graphql` gotchas worth remembering when editing these calls:
 

@@ -8,9 +8,9 @@
 #   --limit N          Maximum number of discussions to fetch (default: 5).
 #   --repo owner/repo   Target repo (default: current repo, via gh).
 #
-# There is no `gh discussion list` (see ../README.md#discussions-are-graphql-only
-# and list-new.sh), so this goes through `gh api graphql`'s
-# `search(type: DISCUSSION)` with a `label:` qualifier.
+# This goes through `gh api graphql`'s `search(type: DISCUSSION)` with a
+# `label:` qualifier rather than the preview `gh discussion list` (see
+# ../README.md#discussions-go-through-graphql and list-new.sh).
 set -euo pipefail
 
 script_name="$(basename "$0")"
