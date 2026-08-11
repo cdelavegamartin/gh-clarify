@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Runs the bats suite. CI runs this exact script, so a green local run means
+# a green CI test job.
+#
+# Usage: script/test [bats-args...]
+#   e.g. script/test test/ask.bats
+#        script/test -f "permalink"
+#
+# Requires bats-core (https://github.com/bats-core/bats-core). If it isn't on
+# PATH, install it without root with:
+#   git clone --depth 1 https://github.com/bats-core/bats-core.git /tmp/bats-core
+#   /tmp/bats-core/install.sh "${HOME}/.local"
+# or, with node available: npm install -g bats
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+if ! command -v bats >/dev/null 2>&1; then
+    echo "script/test: bats is not installed (see the comment at the top of this script)" >&2
+    exit 1
+fi
+
+if [[ $# -gt 0 ]]; then
+    exec bats --print-output-on-failure "$@"
+fi
+
+exec bats --print-output-on-failure test/

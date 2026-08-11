@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Lints every shell file in the repo: shellcheck for correctness, shfmt for
+# formatting. CI runs this exact script, so a green local run means a green
+# CI lint job.
+#
+# Usage: script/lint [--fix]
+#   --fix   Rewrite files with shfmt instead of only reporting differences.
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# shfmt flags matching the existing style: 4-space indent, indented case
+# branches, binary operators kept at line ends.
+SHFMT_FLAGS=(-i 4 -ci -bn)
+
+shell_files=(gh-clarify script/lint script/test test/stubs/gh test/helpers/test_helper.bash)
+while IFS= read -r file; do
+    shell_files+=("${file}")
+done < <(find lib cmds -name '*.sh' | sort)
+
+bats_files=()
+while IFS= read -r file; do
+    bats_files+=("${file}")
+done < <(find test -name '*.bats' | sort)
+
+mode="check"
+if [[ "${1:-}" == "--fix" ]]; then
+    mode="fix"
+fi
+
+status=0
+
+if command -v shellcheck >/dev/null 2>&1; then
+    echo "==> shellcheck -S warning -x"
+    shellcheck -S warning -x "${shell_files[@]}" || status=1
+else
+    echo "==> shellcheck is not installed" >&2
+    status=1
+fi
+
+if command -v shfmt >/dev/null 2>&1; then
+    if [[ "${mode}" == "fix" ]]; then
+        echo "==> shfmt -w ${SHFMT_FLAGS[*]}"
+        shfmt -w "${SHFMT_FLAGS[@]}" "${shell_files[@]}"
+        shfmt -w -ln bats "${SHFMT_FLAGS[@]}" "${bats_files[@]}"
+    else
+        echo "==> shfmt -d ${SHFMT_FLAGS[*]}"
+        shfmt -d "${SHFMT_FLAGS[@]}" "${shell_files[@]}" || status=1
+        shfmt -d -ln bats "${SHFMT_FLAGS[@]}" "${bats_files[@]}" || status=1
+    fi
+else
+    echo "==> shfmt is not installed" >&2
+    status=1
+fi
+
+exit "${status}"
