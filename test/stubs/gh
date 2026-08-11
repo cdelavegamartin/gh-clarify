@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Fake `gh` used by the bats suite. Placed first on PATH so the scripts under
+# test exercise their real argument/JSON handling without ever touching the
+# network, an auth token, or real GitHub state.
+#
+# Design notes
+# ------------
+# * Dispatch is by *distinctive substring* (GraphQL operation name, `-f`/`-F`
+#   variable name, subcommand), never by whole-query string equality, so
+#   harmless reformatting/whitespace changes in the real queries don't break
+#   the suite.
+# * Every invocation is appended to "${GH_STUB_LOG}" as a single line with all
+#   whitespace collapsed, which is what tests grep for.
+# * Behavior is controlled entirely by environment variables:
+#     GH_STUB_RESPONSE_<key>   inline JSON to print instead of the default
+#     GH_STUB_EXIT_<key>       exit non-zero (simulating a failed gh call)
+#     GH_STUB_REPO_JSON        JSON returned by `gh repo view --json ...`
+#     GH_STUB_LABEL_CREATE     ok | exists | fail (default: ok)
+#     GH_STUB_LABEL_CREATE_<LABEL>  per-label override of the above
+#   where <key> is one of: repo_view, repoLookup, labelLookup, discussionId,
+#   showThread, search, createDiscussion, addDiscussionComment,
+#   markDiscussionCommentAsAnswer, addLabelsToLabelable.
+set -uo pipefail
+
+collapsed="$(printf '%s ' "$@" | tr '\n\t' '  ' | tr -s ' ')"
+if [[ -n "${GH_STUB_LOG:-}" ]]; then
+    printf '%s\n' "${collapsed}" >>"${GH_STUB_LOG}"
+fi
+
+STUB_ARGS=("$@")
+
+# stub_env <prefix> <key> -- prints the value of $<prefix>_<key>, if set.
+stub_env() {
+    local var="$1_$2"
+    printf '%s' "${!var:-}"
+}
+
+# emit <key> <default-json> -- honours the GH_STUB_EXIT_/GH_STUB_RESPONSE_
+# overrides for <key>, then prints the (possibly overridden) JSON.
+emit() {
+    local key="$1" default_json="$2" exit_code response
+    exit_code="$(stub_env GH_STUB_EXIT "${key}")"
+    if [[ -n "${exit_code}" ]]; then
+        echo "gh: stubbed failure for ${key}" >&2
+        exit "${exit_code}"
+    fi
+    response="$(stub_env GH_STUB_RESPONSE "${key}")"
+    printf '%s\n' "${response:-${default_json}}"
+    exit 0
+}
+
+# apply_jq_flag <json> -- mimics `gh`'s -q/--jq flag, which the scripts use on
+# `gh repo view`; without it they'd get raw JSON where they expect a field.
+apply_jq_flag() {
+    local json="$1" filter="" i
+    for ((i = 0; i < ${#STUB_ARGS[@]}; i++)); do
+        if [[ "${STUB_ARGS[i]}" == "-q" || "${STUB_ARGS[i]}" == "--jq" ]]; then
+            filter="${STUB_ARGS[i + 1]:-}"
+        fi
+    done
+    if [[ -n "${filter}" ]]; then
+        printf '%s' "${json}" | jq -r "${filter}"
+    else
+        printf '%s\n' "${json}"
+    fi
+}
+
+case "${1:-}" in
+    repo)
+        [[ "${2:-}" == "view" ]] || {
+            echo "gh stub: unsupported repo subcommand: ${2:-}" >&2
+            exit 1
+        }
+        exit_code="$(stub_env GH_STUB_EXIT repo_view)"
+        if [[ -n "${exit_code}" ]]; then
+            echo "gh: stubbed failure for repo view" >&2
+            exit "${exit_code}"
+        fi
+        default_repo_json='{"nameWithOwner":"acme/widgets","hasDiscussionsEnabled":true}'
+        apply_jq_flag "${GH_STUB_REPO_JSON:-${default_repo_json}}"
+        exit 0
+        ;;
+    label)
+        [[ "${2:-}" == "create" ]] || {
+            echo "gh stub: unsupported label subcommand: ${2:-}" >&2
+            exit 1
+        }
+        label="${3:-}"
+        behavior="$(stub_env GH_STUB_LABEL_CREATE "${label//[^a-zA-Z0-9]/_}")"
+        behavior="${behavior:-${GH_STUB_LABEL_CREATE:-ok}}"
+        case "${behavior}" in
+            ok)
+                echo "created label \"${label}\""
+                exit 0
+                ;;
+            exists)
+                echo "HTTP 422: Validation Failed (a label with that name already exists)" >&2
+                exit 1
+                ;;
+            *)
+                echo "HTTP 403: Resource not accessible by integration" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    api)
+        [[ "${2:-}" == "graphql" ]] || {
+            echo "gh stub: unsupported api target: ${2:-}" >&2
+            exit 1
+        }
+        ;;
+    *)
+        echo "gh stub: unsupported command: ${1:-<none>}" >&2
+        exit 1
+        ;;
+esac
+
+# --- gh api graphql ----------------------------------------------------------
+# Matched most-specific-first: mutations, then the queries, each distinguished
+# by a field only that query asks for.
+case "${collapsed}" in
+    *createDiscussion*)
+        emit createDiscussion \
+            '{"data":{"createDiscussion":{"discussion":{"id":"D_stubdiscussion","url":"https://github.com/acme/widgets/discussions/42"}}}}'
+        ;;
+    *addDiscussionComment*)
+        emit addDiscussionComment \
+            '{"data":{"addDiscussionComment":{"comment":{"id":"DC_stubcomment"}}}}'
+        ;;
+    *markDiscussionCommentAsAnswer*)
+        emit markDiscussionCommentAsAnswer \
+            '{"data":{"markDiscussionCommentAsAnswer":{"discussion":{"id":"D_stubdiscussion"}}}}'
+        ;;
+    *addLabelsToLabelable*)
+        emit addLabelsToLabelable \
+            '{"data":{"addLabelsToLabelable":{"clientMutationId":null}}}'
+        ;;
+    *discussionCategories*)
+        emit repoLookup \
+            '{"data":{"repository":{"id":"R_stubrepo","discussionCategories":{"nodes":[{"id":"DIC_general","name":"General","slug":"general"},{"id":"DIC_qa","name":"Q&A","slug":"q-a"}]},"label":{"id":"LA_clarification"}}}}'
+        ;;
+    *"type: DISCUSSION"*)
+        emit search \
+            '{"data":{"search":{"nodes":[{"number":7,"title":"Why the retry loop?","url":"https://github.com/acme/widgets/discussions/7","body":"question body"}]}}}'
+        ;;
+    *"comments(first:"*)
+        emit showThread \
+            '{"data":{"repository":{"discussion":{"number":7,"title":"Why the retry loop?","url":"https://github.com/acme/widgets/discussions/7","body":"question body","comments":{"nodes":[{"id":"DC_stubcomment","body":"answer body","createdAt":"2024-01-01T00:00:00Z","author":{"login":"copilot-bot"},"replies":{"nodes":[{"id":"DC_stubreply","body":"reply body","createdAt":"2024-01-02T00:00:00Z","author":{"login":"maintainer"}}]}}]}}}}}'
+        ;;
+    *"discussion(number:"*)
+        emit discussionId '{"data":{"repository":{"discussion":{"id":"D_stubdiscussion"}}}}'
+        ;;
+    *"label(name:"*)
+        emit labelLookup '{"data":{"repository":{"label":{"id":"LA_botanswered"}}}}'
+        ;;
+    *)
+        echo "gh stub: unrecognized graphql query: ${collapsed}" >&2
+        exit 1
+        ;;
+esac
