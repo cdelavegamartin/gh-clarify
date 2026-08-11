@@ -246,8 +246,8 @@ Tooling:
   [release binary](https://github.com/mvdan/sh/releases).
 - **[bats-core](https://github.com/bats-core/bats-core)**. Install without
   root via `git clone --depth 1 https://github.com/bats-core/bats-core.git
-  /tmp/bats-core && /tmp/bats-core/install.sh "${HOME}/.local"`, or with
-  `npm install -g bats` (what CI uses).
+  /tmp/bats-core && /tmp/bats-core/install.sh "${HOME}/.local"` (what CI
+  does, pinned to a tag), or with `npm install -g bats` if you'd rather.
 
 ### How the tests work
 
