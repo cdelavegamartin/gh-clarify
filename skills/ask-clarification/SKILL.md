@@ -1,15 +1,6 @@
 ---
 name: ask-clarification
-description: >
-  File a code-clarification GitHub Discussion when something in the code is
-  unclear (why a snippet works, why it's necessary, why we use approach X
-  instead of Y). Creates a Q&A discussion with the "code-clarification" label,
-  including a permalink pinned to the current commit and a verbatim code
-  snippet so the question stays answerable even if the lines move later.
-  Refuses to run if the repo has GitHub Discussions disabled and tells you
-  to enable it instead. Use this when you encounter confusing code during
-  reviews, merges, or investigation — don't guess or leave inline notes;
-  file a discussion so the answer is visible to the whole team.
+description: 'File a code-clarification GitHub Discussion when something in the code is unclear (why a snippet works, why it is necessary, why we use approach X instead of Y). Creates a Q&A discussion with the "code-clarification" label, including a permalink pinned to the current commit and a verbatim code snippet so the question stays answerable even if the lines move later.'
 argument-hint: '<question> [in <file> <start>[:<end>]]'
 ---
 
